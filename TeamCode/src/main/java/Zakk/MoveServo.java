@@ -35,6 +35,7 @@ public class MoveServo extends OpMode {
 
         double Position = Claw.getPosition();
         Claw.setPosition(Position + oneRightStickXPower);
+        telemetry.addData("Claw Position",Claw.getPosition());
 
     }
 
