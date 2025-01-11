@@ -120,6 +120,7 @@ public class TeleopMain extends OpMode {
         float oneTriggerRight = gamepad1.right_trigger;
         boolean oneBumperLeft = gamepad1.left_bumper;
         boolean oneBumperRight = gamepad1.right_bumper;
+        boolean oneButtonX = gamepad1.x;
 
         // Gamepad 2
         double twoLeftStickYPower = -gamepad2.left_stick_y;
@@ -140,6 +141,11 @@ public class TeleopMain extends OpMode {
         boolean twoBack = gamepad2.back;
         boolean twoStart = gamepad2.start;
 
+        boolean firstTimeLeft = true;
+        boolean firstTimeRight = true;
+        boolean FirstTime = true;
+
+
         /*
          * Do Stuff Here!
          */
@@ -158,28 +164,15 @@ public class TeleopMain extends OpMode {
             firstTimeLeft = false;
             clawToggle1 = !clawToggle1;
             if (clawToggle1){
-                Claw1.setPosition(0.46);
+                Claw.setPosition(0.46);
             } else {
-                Claw1.setPosition(0);
+                Claw.setPosition(0);
             }
         }
 
-        ClawButtonRight = gamepad2.dpad_right;
+        ClawButtonRight = oneButtonX;
 
 
-        if (ClawButtonRight == false && firstTimeRight == false){
-            firstTimeRight = true;
-        }
-
-        if (ClawButtonRight && firstTimeRight){
-            firstTimeRight = false;
-            clawToggle2 = !clawToggle2;
-            if (clawToggle2){
-                Claw2.setPosition(0.46);
-            } else {
-                Claw2.setPosition(0);
-            }
-        }
 
         telemetry.addData("Claw1", Claw.getPosition());
 
