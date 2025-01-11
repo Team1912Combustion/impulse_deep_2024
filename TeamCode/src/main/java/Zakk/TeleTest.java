@@ -72,7 +72,8 @@ public class TeleTest extends LinearOpMode {
     }
 
 
-    //uf
+    //ufjgfhjjg
+    //rjyyr
     private void configureOtos() {
         telemetry.addLine("Configuring OTOS...");
         telemetry.update();
