@@ -1,5 +1,7 @@
 package Zakk;
 
+import android.hardware.Sensor;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -30,6 +32,10 @@ public class HopeThisWorks extends OpMode {
     private DcMotor WheelBackLeft;
     private DcMotor WheelBackRight;
 
+   //Arm
+    private DcMotor Arm;
+    private DcMotor RotateArm;
+
 
     // SlowMode Drive
     private boolean slowModeDriveOn = true;
@@ -51,26 +57,37 @@ public class HopeThisWorks extends OpMode {
         WheelFrontRight = hardwareMap.dcMotor.get("WheelFR");
         WheelBackLeft = hardwareMap.dcMotor.get("WheelBL");
         WheelBackRight = hardwareMap.dcMotor.get("WheelBR");
+        Arm = hardwareMap.dcMotor.get("Arm");
+        RotateArm = hardwareMap.dcMotor.get("RotateArm");
+
 
         WheelFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         WheelFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         WheelBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         WheelBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        RotateArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        WheelFrontLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        WheelFrontRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        WheelBackLeft.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        WheelBackRight.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        WheelFrontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        WheelFrontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        WheelBackLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        WheelBackRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        Arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        RotateArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
         WheelFrontLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         WheelFrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
         WheelBackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         WheelBackRight.setDirection(DcMotorSimple.Direction.FORWARD);
+        Arm.setDirection(DcMotorSimple.Direction.FORWARD);
+        RotateArm.setDirection(DcMotorSimple.Direction.FORWARD);
 
         WheelFrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         WheelFrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         WheelBackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         WheelBackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        RotateArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
 
@@ -92,11 +109,28 @@ public class HopeThisWorks extends OpMode {
         double oneLeftStickYPower = -gamepad1.left_stick_y;
         double oneLeftStickXPower = gamepad1.left_stick_x;
         double oneRightStickXPower = gamepad1.right_stick_x;
+        double oneRightStickYPower = gamepad1.right_stick_y;
         boolean oneButtonA = gamepad1.a;
         boolean oneButtonB = gamepad1.b;
+        boolean oneButtonX = gamepad1.x;
+        boolean oneButtonY = gamepad1.y;
+        boolean onePadUp = gamepad1.dpad_up;
+        boolean onePadDown = gamepad1.dpad_down;
+        boolean onePadLeft = gamepad1.dpad_left;
+        boolean onePadRight = gamepad1.dpad_right;
+        float oneTriggerLeft = gamepad1.left_trigger;
+        float oneTriggerRight = gamepad1.right_trigger;
+        boolean oneBumperLeft = gamepad1.left_bumper;
+        boolean oneBumperRight = gamepad1.right_bumper;
+        boolean oneBack = gamepad1.back;
         boolean oneStart = gamepad1.start;
 
+
         // Gamepad 2
+        double twoLeftStickYPower = gamepad2.left_stick_y;
+        double twoLeftStickXPower = gamepad2.left_stick_x;
+        double twoRightStickXPower = gamepad2.right_stick_x;
+        double twoRightStickYPower = gamepad2.right_stick_y;
         boolean twoButtonA = gamepad2.a;
         boolean twoButtonB = gamepad2.b;
         boolean twoButtonX = gamepad2.x;
@@ -214,6 +248,14 @@ public class HopeThisWorks extends OpMode {
             modifyBySine = 1;
             telemetry.addData("Sine Drive", "OFF");
         }
+    }
+
+    private void MoveArm(double Leftstick2){
+        Arm.setPower(Leftstick2);
+    }
+
+    private void IsArmVerticalOrHorizontal(){
+
     }
 }
 
