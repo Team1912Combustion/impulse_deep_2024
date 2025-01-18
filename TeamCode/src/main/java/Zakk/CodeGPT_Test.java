@@ -1,19 +1,10 @@
 package Zakk;
 
-import android.hardware.Sensor;
-
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.Servo;
-import com.qualcomm.robotcore.hardware.TouchSensor;
-
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-
-import java.util.concurrent.TimeUnit;
 
 @TeleOp(name = "CodeGPT_Test", group = "Testing")
 public class CodeGPT_Test extends OpMode {
@@ -73,7 +64,7 @@ public class CodeGPT_Test extends OpMode {
         WheelFrontRight.setDirection(DcMotorSimple.Direction.FORWARD);
         WheelBackLeft.setDirection(DcMotorSimple.Direction.REVERSE);
         WheelBackRight.setDirection(DcMotorSimple.Direction.FORWARD);
-        Arm.setDirection(DcMotorSimple.Direction.FORWARD);
+        Arm.setDirection(DcMotorSimple.Direction.REVERSE);
         RotateArm.setDirection(DcMotorSimple.Direction.FORWARD);
 
         WheelFrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -114,7 +105,7 @@ public class CodeGPT_Test extends OpMode {
         boolean oneStart = gamepad1.start;
 
         // Gamepad 2
-        double twoLeftStickYPower = gamepad2.left_stick_y;
+        double twoLeftStickYPower = -gamepad2.left_stick_y;
         double twoLeftStickXPower = gamepad2.left_stick_x;
         boolean twoButtonA = gamepad2.a;
         boolean twoButtonB = gamepad2.b;
@@ -130,6 +121,10 @@ public class CodeGPT_Test extends OpMode {
         boolean twoBumperRight = gamepad2.right_bumper;
         boolean twoBack = gamepad2.back;
         boolean twoStart = gamepad2.start;
+
+        //double ArmPower = 0;
+
+
         /*
          * Reset Encoders
          */
@@ -151,6 +146,8 @@ public class CodeGPT_Test extends OpMode {
 
         ToggleSlowModeDrive(oneButtonA);
         ProMotorControl(oneLeftStickYPower, oneLeftStickXPower, oneRightStickXPower);
+
+        //IsArmVertical(ArmPower);
 
         controlArmWithEncoders(twoLeftStickYPower, twoLeftStickXPower);
 
@@ -192,23 +189,29 @@ public class CodeGPT_Test extends OpMode {
         double armInches = armTicks / TICKS_PER_INCH;
         double rotateInches = rotateTicks / TICKS_PER_INCH;
 
-        if (rotateInches <= 0.5 && armInches >= 38) {
-            Arm.setPower(0); // Stop the Arm motor
+        // Allow Arm to retract even if RotateArm < 2 inches
+        if (rotateInches < -30 && armInches >= -19) {
+            if (armPower < 0) { // Retraction
+                Arm.setPower(armPower);
+            } else {
+                Arm.setPower(armPower*0); // Nullify forward movement
+            }
         } else {
-            Arm.setPower(armPower); // Allow movement otherwise
-        }
-
-        if (rotateInches > 2) {
-            Arm.setPower(armPower); // Allow unrestricted movement
+            // Normal behavior when RotateArm >= 2 inches
+            if (rotateInches >= -30.1) {
+                Arm.setPower(armPower);
+            }
         }
 
         RotateArm.setPower(rotatePower);
 
+        // Telemetry for debugging
         telemetry.addData("Arm Inches", armInches);
         telemetry.addData("Rotate Inches", rotateInches);
         telemetry.addData("Arm Power", armPower);
         telemetry.addData("Rotate Power", rotatePower);
     }
+
 
     private void ToggleSlowModeDrive(boolean button) {
         if (button && !buttonSlowDriveIsPressed) {
@@ -227,6 +230,20 @@ public class CodeGPT_Test extends OpMode {
             telemetry.addData("Drive Mode", "Fast: " + percentToSlowDrive + "% Power");
         }
     }
+
+//    private void IsArmVertical(double powah) {
+//        int armTicks = Arm.getCurrentPosition();
+//        int rotateTicks = RotateArm.getCurrentPosition();
+//
+//        double armInches = armTicks / TICKS_PER_INCH;
+//        double rotateInches = rotateTicks / TICKS_PER_INCH;
+//
+//        if (rotateInches < -30 && armInches >= -18){
+//            powah = 0;
+//        } else {
+//
+//        }
+//    }
 
     private void resetEncoders() {
         WheelFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);

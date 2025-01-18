@@ -12,10 +12,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.hardware.TouchSensor;
 
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-//import org.firstinspires.ftc.teamcode.Adam.RevBlinkinLedDriver;
 
 import java.util.concurrent.TimeUnit;
-
 
 @TeleOp(name = "HopeThisWorks", group = "Competition")
 public class HopeThisWorks extends OpMode {
@@ -23,7 +21,7 @@ public class HopeThisWorks extends OpMode {
      * Declare Hardware
      */
 
-    //IMU
+    // IMU
     private IMU imu;
 
     // Wheels
@@ -32,16 +30,15 @@ public class HopeThisWorks extends OpMode {
     private DcMotor WheelBackLeft;
     private DcMotor WheelBackRight;
 
-   //Arm
+    // Arm
     private DcMotor Arm;
     private DcMotor RotateArm;
-
 
     // SlowMode Drive
     private boolean slowModeDriveOn = true;
     private boolean buttonSlowDriveIsPressed = false;
     private final double SLOW_DRIVE = 0.4;
-    private final double FAST_DRIVE = 1.0; //0.9;
+    private final double FAST_DRIVE = 1.0; // 0.9;
     private double percentToSlowDrive = SLOW_DRIVE;
 
     // SineDrive
@@ -49,10 +46,13 @@ public class HopeThisWorks extends OpMode {
     private boolean buttonSineIsPressed = false;
     private double modifyBySine = Math.sin(Math.PI / 4);
 
+    // Encoder Constants
+    private static final double TICKS_PER_REVOLUTION = 1120; // Example for an AndyMark NeveRest motor
+    private static final double INCHES_PER_REVOLUTION = 4 * Math.PI; // Assuming a 4-inch wheel
+    private static final double TICKS_PER_INCH = TICKS_PER_REVOLUTION / INCHES_PER_REVOLUTION;
 
     @Override
     public void init() {
-
         WheelFrontLeft = hardwareMap.dcMotor.get("WheelFL");
         WheelFrontRight = hardwareMap.dcMotor.get("WheelFR");
         WheelBackLeft = hardwareMap.dcMotor.get("WheelBL");
@@ -60,13 +60,7 @@ public class HopeThisWorks extends OpMode {
         Arm = hardwareMap.dcMotor.get("Arm");
         RotateArm = hardwareMap.dcMotor.get("RotateArm");
 
-
-        WheelFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        WheelFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        WheelBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        WheelBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        RotateArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        resetEncoders();
 
         WheelFrontLeft.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         WheelFrontRight.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -89,18 +83,12 @@ public class HopeThisWorks extends OpMode {
         Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RotateArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-
-
-        // Let the user know initialization is complete.
         telemetry.addData("I", "Initialization Complete! :D");
         telemetry.update();
     }
 
-
-
     @Override
     public void loop() {
-
         /*
          * Gamepad Controls
          */
@@ -125,50 +113,43 @@ public class HopeThisWorks extends OpMode {
         boolean oneBack = gamepad1.back;
         boolean oneStart = gamepad1.start;
 
-
         // Gamepad 2
         double twoLeftStickYPower = gamepad2.left_stick_y;
         double twoLeftStickXPower = gamepad2.left_stick_x;
-        double twoRightStickXPower = gamepad2.right_stick_x;
-        double twoRightStickYPower = gamepad2.right_stick_y;
         boolean twoButtonA = gamepad2.a;
         boolean twoButtonB = gamepad2.b;
-        boolean twoButtonX = gamepad2.x;
-        boolean twoButtonY = gamepad2.y;
-        boolean twoPadUp = gamepad2.dpad_up;
-        boolean twoPadDown = gamepad2.dpad_down;
-        boolean twoPadLeft = gamepad2.dpad_left;
-        boolean twoPadRight = gamepad2.dpad_right;
-        float twoTriggerLeft = gamepad2.left_trigger;
-        float twoTriggerRight = gamepad2.right_trigger;
-        boolean twoBumperLeft = gamepad2.left_bumper;
-        boolean twoBumperRight = gamepad2.right_bumper;
-        boolean twoBack = gamepad2.back;
-        boolean twoStart = gamepad2.start;
+
+        /*
+         * Reset Encoders
+         */
+        if (twoButtonA) {
+            Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            Arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            telemetry.addData("Arm Encoder", "Reset");
+        }
+
+        if (twoButtonB) {
+            RotateArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+            RotateArm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+            telemetry.addData("RotateArm Encoder", "Reset");
+        }
 
         /*
          * Do Stuff Here!
          */
 
-
-        // Slow Controls
         ToggleSlowModeDrive(oneButtonA);
         ProMotorControl(oneLeftStickYPower, oneLeftStickXPower, oneRightStickXPower);
 
+        controlArmWithEncoders(twoLeftStickYPower, twoLeftStickXPower);
+
         telemetry.update();
-
-
     }
-
 
     /*
      * Methods
      */
 
-    //https://ftcforum.usfirst.org/forum/ftc-technology/android-studio/6361-mecanum-wheels-drive-code-example
-    //******************************************************************
-    // Get the inputs from the controller for power [ PRO ]
-    //******************************************************************
     private void ProMotorControl(double left_stick_y, double left_stick_x, double right_stick_x) {
         double powerLeftY = left_stick_y;   // DRIVE : Backward -1 <---> 1 Forward
         double powerLeftX = -left_stick_x * -1; // STRAFE:     Left -1 <---> 1 Right
@@ -193,25 +174,30 @@ public class HopeThisWorks extends OpMode {
         telemetry.addData("Wheel Back Right", v4 * percentToSlowDrive);
     }
 
-    private void PowerMotorControl(double FL,double BL, double FR, double BR){
-        final double v1 = FL / modifyBySine;
-        final double v2 = BL / modifyBySine;
-        final double v3 = FR / modifyBySine;
-        final double v4 = BR / modifyBySine;
+    private void controlArmWithEncoders(double armPower, double rotatePower) {
+        int armTicks = Arm.getCurrentPosition();
+        int rotateTicks = RotateArm.getCurrentPosition();
 
-        WheelFrontLeft.setPower(v1 * percentToSlowDrive);
-        WheelFrontRight.setPower(v2 * percentToSlowDrive);
-        WheelBackLeft.setPower(v3 * percentToSlowDrive);
-        WheelBackRight.setPower(v4 * percentToSlowDrive);
+        double armInches = armTicks / TICKS_PER_INCH;
+        double rotateInches = rotateTicks / TICKS_PER_INCH;
 
-        telemetry.addData("Wheel Front Left", v1 * percentToSlowDrive);
-        telemetry.addData("Wheel Front Right", v2 * percentToSlowDrive);
-        telemetry.addData("Wheel Back Left", v3 * percentToSlowDrive);
-        telemetry.addData("Wheel Back Right", v4 * percentToSlowDrive);
+        if (rotateInches <= 0.5 && armInches >= 38) {
+            Arm.setPower(0); // Stop the Arm motor
+        } else {
+            Arm.setPower(armPower); // Allow movement otherwise
+        }
+
+        if (rotateInches > 2) {
+            Arm.setPower(armPower); // Allow unrestricted movement
+        }
+
+        RotateArm.setPower(rotatePower);
+
+        telemetry.addData("Arm Inches", armInches);
+        telemetry.addData("Rotate Inches", rotateInches);
+        telemetry.addData("Arm Power", armPower);
+        telemetry.addData("Rotate Power", rotatePower);
     }
-
-
-
 
     private void ToggleSlowModeDrive(boolean button) {
         if (button && !buttonSlowDriveIsPressed) {
@@ -231,32 +217,12 @@ public class HopeThisWorks extends OpMode {
         }
     }
 
-
-    private void ToggleSineDrive(boolean button) {
-        if (button && !buttonSineIsPressed) {
-            buttonSineIsPressed = true;
-            sineDriveOn = !sineDriveOn;
-        }
-        if (!button) {
-            buttonSineIsPressed = false;
-        }
-
-        if (sineDriveOn) {
-            modifyBySine = Math.sin(Math.PI / 4);
-            telemetry.addData("Sine Drive", "ON");
-        } else {
-            modifyBySine = 1;
-            telemetry.addData("Sine Drive", "OFF");
-        }
-    }
-
-    private void MoveArm(double Leftstick2){
-        Arm.setPower(Leftstick2);
-    }
-
-    private void IsArmVerticalOrHorizontal(){
-
+    private void resetEncoders() {
+        WheelFrontLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        WheelFrontRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        WheelBackLeft.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        WheelBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        RotateArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
 }
-
-
