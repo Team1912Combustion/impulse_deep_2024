@@ -17,23 +17,31 @@ import java.util.concurrent.TimeUnit;
 
 @TeleOp(name = "CodeGPT_Test", group = "Testing")
 public class CodeGPT_Test extends OpMode {
-    // Hardware
+    /*
+     * Declare Hardware
+     */
+
+    // IMU
     private IMU imu;
+
+    // Wheels
     private DcMotor WheelFrontLeft;
     private DcMotor WheelFrontRight;
     private DcMotor WheelBackLeft;
     private DcMotor WheelBackRight;
+
+    // Arm
     private DcMotor Arm;
     private DcMotor RotateArm;
 
-    // Slow Mode Drive
+    // SlowMode Drive
     private boolean slowModeDriveOn = true;
     private boolean buttonSlowDriveIsPressed = false;
     private final double SLOW_DRIVE = 0.4;
-    private final double FAST_DRIVE = 1.0;
+    private final double FAST_DRIVE = 1.0; // 0.9;
     private double percentToSlowDrive = SLOW_DRIVE;
 
-    // Sine Drive
+    // SineDrive
     private boolean sineDriveOn = true;
     private boolean buttonSineIsPressed = false;
     private double modifyBySine = Math.sin(Math.PI / 4);
@@ -42,7 +50,7 @@ public class CodeGPT_Test extends OpMode {
     private static final double TICKS_PER_REVOLUTION = 1120; // Example for an AndyMark NeveRest motor
     private static final double INCHES_PER_REVOLUTION = 4 * Math.PI; // Assuming a 4-inch wheel
     private static final double TICKS_PER_INCH = TICKS_PER_REVOLUTION / INCHES_PER_REVOLUTION;
-// commit
+
     @Override
     public void init() {
         WheelFrontLeft = hardwareMap.dcMotor.get("WheelFL");
@@ -68,7 +76,12 @@ public class CodeGPT_Test extends OpMode {
         Arm.setDirection(DcMotorSimple.Direction.FORWARD);
         RotateArm.setDirection(DcMotorSimple.Direction.FORWARD);
 
-        setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        WheelFrontLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        WheelFrontRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        WheelBackLeft.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        WheelBackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        RotateArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         telemetry.addData("I", "Initialization Complete! :D");
         telemetry.update();
@@ -76,7 +89,6 @@ public class CodeGPT_Test extends OpMode {
 
     @Override
     public void loop() {
-
         /*
          * Gamepad Controls
          */
@@ -101,12 +113,9 @@ public class CodeGPT_Test extends OpMode {
         boolean oneBack = gamepad1.back;
         boolean oneStart = gamepad1.start;
 
-
         // Gamepad 2
         double twoLeftStickYPower = gamepad2.left_stick_y;
         double twoLeftStickXPower = gamepad2.left_stick_x;
-        double twoRightStickXPower = gamepad2.right_stick_x;
-        double twoRightStickYPower = gamepad2.right_stick_y;
         boolean twoButtonA = gamepad2.a;
         boolean twoButtonB = gamepad2.b;
         boolean twoButtonX = gamepad2.x;
@@ -121,8 +130,9 @@ public class CodeGPT_Test extends OpMode {
         boolean twoBumperRight = gamepad2.right_bumper;
         boolean twoBack = gamepad2.back;
         boolean twoStart = gamepad2.start;
-
-        // Reset encoders for Arm and RotateArm
+        /*
+         * Reset Encoders
+         */
         if (twoButtonA) {
             Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
             Arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
@@ -135,10 +145,44 @@ public class CodeGPT_Test extends OpMode {
             telemetry.addData("RotateArm Encoder", "Reset");
         }
 
-        // Move the Arm and RotateArm while respecting encoder constraints
+        /*
+         * Do Stuff Here!
+         */
+
+        ToggleSlowModeDrive(oneButtonA);
+        ProMotorControl(oneLeftStickYPower, oneLeftStickXPower, oneRightStickXPower);
+
         controlArmWithEncoders(twoLeftStickYPower, twoLeftStickXPower);
 
         telemetry.update();
+    }
+
+    /*
+     * Methods
+     */
+
+    private void ProMotorControl(double left_stick_y, double left_stick_x, double right_stick_x) {
+        double powerLeftY = left_stick_y;   // DRIVE : Backward -1 <---> 1 Forward
+        double powerLeftX = -left_stick_x * -1; // STRAFE:     Left -1 <---> 1 Right
+        double powerRightX = right_stick_x; // ROTATE:     Left -1 <---> 1 Right
+
+        double r = Math.hypot(powerLeftX, powerLeftY);
+        double robotAngle = Math.atan2(powerLeftY, powerLeftX) - Math.PI / 4;
+        double leftX = powerRightX;
+        final double v1 = r * Math.cos(robotAngle) / modifyBySine + leftX;
+        final double v2 = r * Math.sin(robotAngle) / modifyBySine - leftX;
+        final double v3 = r * Math.sin(robotAngle) / modifyBySine + leftX;
+        final double v4 = r * Math.cos(robotAngle) / modifyBySine - leftX;
+
+        WheelFrontLeft.setPower(v1 * percentToSlowDrive);
+        WheelFrontRight.setPower(v2 * percentToSlowDrive);
+        WheelBackLeft.setPower(v3 * percentToSlowDrive);
+        WheelBackRight.setPower(v4 * percentToSlowDrive);
+
+        telemetry.addData("Wheel Front Left", v1 * percentToSlowDrive);
+        telemetry.addData("Wheel Front Right", v2 * percentToSlowDrive);
+        telemetry.addData("Wheel Back Left", v3 * percentToSlowDrive);
+        telemetry.addData("Wheel Back Right", v4 * percentToSlowDrive);
     }
 
     private void controlArmWithEncoders(double armPower, double rotatePower) {
@@ -160,11 +204,28 @@ public class CodeGPT_Test extends OpMode {
 
         RotateArm.setPower(rotatePower);
 
-        // Telemetry for debugging
         telemetry.addData("Arm Inches", armInches);
         telemetry.addData("Rotate Inches", rotateInches);
         telemetry.addData("Arm Power", armPower);
         telemetry.addData("Rotate Power", rotatePower);
+    }
+
+    private void ToggleSlowModeDrive(boolean button) {
+        if (button && !buttonSlowDriveIsPressed) {
+            buttonSlowDriveIsPressed = true;
+            slowModeDriveOn = !slowModeDriveOn;
+        }
+        if (!button) {
+            buttonSlowDriveIsPressed = false;
+        }
+
+        if (slowModeDriveOn) {
+            percentToSlowDrive = SLOW_DRIVE;
+            telemetry.addData("Drive Mode", "Slow: " + percentToSlowDrive + "% Power");
+        } else {
+            percentToSlowDrive = FAST_DRIVE;
+            telemetry.addData("Drive Mode", "Fast: " + percentToSlowDrive + "% Power");
+        }
     }
 
     private void resetEncoders() {
@@ -174,14 +235,5 @@ public class CodeGPT_Test extends OpMode {
         WheelBackRight.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RotateArm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-    }
-
-    private void setZeroPowerBehavior(DcMotor.ZeroPowerBehavior behavior) {
-        WheelFrontLeft.setZeroPowerBehavior(behavior);
-        WheelFrontRight.setZeroPowerBehavior(behavior);
-        WheelBackLeft.setZeroPowerBehavior(behavior);
-        WheelBackRight.setZeroPowerBehavior(behavior);
-        Arm.setZeroPowerBehavior(behavior);
-        RotateArm.setZeroPowerBehavior(behavior);
     }
 }
