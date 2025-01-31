@@ -1,12 +1,15 @@
 package Zakk;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
 
 @TeleOp(name = "CodeGPT_Test", group = "Testing")
+@Disabled
 public class CodeGPT_Test extends OpMode {
     /*
      * Declare Hardware
@@ -74,6 +77,7 @@ public class CodeGPT_Test extends OpMode {
         Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RotateArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
+
         telemetry.addData("I", "Initialization Complete! :D");
         telemetry.update();
     }
@@ -107,6 +111,8 @@ public class CodeGPT_Test extends OpMode {
         // Gamepad 2
         double twoLeftStickYPower = -gamepad2.left_stick_y;
         double twoLeftStickXPower = gamepad2.left_stick_x;
+        double twoRightStickXPower = gamepad2.right_stick_x;
+        double twoRightStickYPower = gamepad2.right_stick_y;
         boolean twoButtonA = gamepad2.a;
         boolean twoButtonB = gamepad2.b;
         boolean twoButtonX = gamepad2.x;

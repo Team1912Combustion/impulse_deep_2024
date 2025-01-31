@@ -5,6 +5,7 @@ import android.hardware.Sensor;
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.OpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.IMU;
@@ -15,7 +16,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import java.util.concurrent.TimeUnit;
 
-@TeleOp(name = "HopeThisWorks", group = "Competition")
+@TeleOp(name = "Teleop", group = "Competition")
 public class HopeThisWorks extends OpMode {
     /*
      * Declare Hardware
@@ -33,6 +34,8 @@ public class HopeThisWorks extends OpMode {
     // Arm
     private DcMotor Arm;
     private DcMotor RotateArm;
+    CRServo Crotate;
+    CRServo Claw;
 
     // SlowMode Drive
     private boolean slowModeDriveOn = true;
@@ -59,6 +62,8 @@ public class HopeThisWorks extends OpMode {
         WheelBackRight = hardwareMap.dcMotor.get("WheelBR");
         Arm = hardwareMap.dcMotor.get("Arm");
         RotateArm = hardwareMap.dcMotor.get("RotateArm");
+        Crotate = hardwareMap.crservo.get("Crotate");
+        Claw = hardwareMap.crservo.get("Claw");
 
         resetEncoders();
 
@@ -82,7 +87,6 @@ public class HopeThisWorks extends OpMode {
         WheelBackRight.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RotateArm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
         telemetry.addData("I", "Initialization Complete! :D");
         telemetry.update();
     }
@@ -116,6 +120,8 @@ public class HopeThisWorks extends OpMode {
         // Gamepad 2
         double twoLeftStickYPower = gamepad2.left_stick_y;
         double twoLeftStickXPower = gamepad2.left_stick_x;
+        double twoRightStickXPower = gamepad2.right_stick_x;
+        double twoRightStickYPower = gamepad2.right_stick_y;
         boolean twoButtonA = gamepad2.a;
         boolean twoButtonB = gamepad2.b;
 
@@ -140,8 +146,9 @@ public class HopeThisWorks extends OpMode {
 
         ToggleSlowModeDrive(oneButtonA);
         ProMotorControl(oneLeftStickYPower, oneLeftStickXPower, oneRightStickXPower);
+        ArmSystemControl(twoLeftStickYPower, twoRightStickXPower, twoRightStickYPower);
 
-        controlArmWithEncoders(twoLeftStickYPower, twoLeftStickXPower);
+        //controlArmWithEncoders(twoLeftStickYPower, twoLeftStickXPower);
 
         telemetry.update();
     }
@@ -174,30 +181,30 @@ public class HopeThisWorks extends OpMode {
         telemetry.addData("Wheel Back Right", v4 * percentToSlowDrive);
     }
 
-    private void controlArmWithEncoders(double armPower, double rotatePower) {
-        int armTicks = Arm.getCurrentPosition();
-        int rotateTicks = RotateArm.getCurrentPosition();
-
-        double armInches = armTicks / TICKS_PER_INCH;
-        double rotateInches = rotateTicks / TICKS_PER_INCH;
-
-        if (rotateInches <= 0.5 && armInches >= 38) {
-            Arm.setPower(0); // Stop the Arm motor
-        } else {
-            Arm.setPower(armPower); // Allow movement otherwise
-        }
-
-        if (rotateInches > 2) {
-            Arm.setPower(armPower); // Allow unrestricted movement
-        }
-
-        RotateArm.setPower(rotatePower);
-
-        telemetry.addData("Arm Inches", armInches);
-        telemetry.addData("Rotate Inches", rotateInches);
-        telemetry.addData("Arm Power", armPower);
-        telemetry.addData("Rotate Power", rotatePower);
-    }
+//    private void controlArmWithEncoders(double armPower, double rotatePower) {
+//        int armTicks = Arm.getCurrentPosition();
+//        int rotateTicks = RotateArm.getCurrentPosition();
+//
+//        double armInches = armTicks / TICKS_PER_INCH;
+//        double rotateInches = rotateTicks / TICKS_PER_INCH;
+//
+//        if (rotateInches <= 0.5 && armInches >= 38) {
+//            Arm.setPower(0); // Stop the Arm motor
+//        } else {
+//            Arm.setPower(armPower); // Allow movement otherwise
+//        }
+//
+//        if (rotateInches > 2) {
+//            Arm.setPower(armPower); // Allow unrestricted movement
+//        }
+//
+//        RotateArm.setPower(rotatePower);
+//
+//        telemetry.addData("Arm Inches", armInches);
+//        telemetry.addData("Rotate Inches", rotateInches);
+//        telemetry.addData("Arm Power", armPower);
+//        telemetry.addData("Rotate Power", rotatePower);
+//    }
 
     private void ToggleSlowModeDrive(boolean button) {
         if (button && !buttonSlowDriveIsPressed) {
@@ -215,6 +222,12 @@ public class HopeThisWorks extends OpMode {
             percentToSlowDrive = FAST_DRIVE;
             telemetry.addData("Drive Mode", "Fast: " + percentToSlowDrive + "% Power");
         }
+    }
+
+    private void ArmSystemControl(double ArmPower,double CrotatePower,double ClawPower){
+        Arm.setPower(ArmPower);
+        Crotate.setPower(CrotatePower);
+        Claw.setPower(ClawPower);
     }
 
     private void resetEncoders() {

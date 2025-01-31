@@ -13,6 +13,7 @@ import java.time.zone.ZoneRules;
 
 //@Disabled
 @TeleOp(name = "TeleOpMain", group = "Competition")
+@Disabled
 public class TeleopMain extends OpMode {
 
     /*
